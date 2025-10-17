@@ -31,19 +31,16 @@ export default function EmailPhisher ({setResult, setIsAnalyzing, isAnalyzing}) 
   }
 
   const handleFileChange = (event) => {
-    debugger;
-    const file = event.target.files[0]; // Get the first selected file
+    const file = event.target.files[0]; 
 
     if (file) {
       const reader = new FileReader();
-
-      // Define what happens when the file is successfully read
+      
       reader.onload = (e) => {
         const text = e.target.result;
-        setEmailText(text); // Update the state, which populates the textarea
+        setEmailText(text); 
       };
       
-      // Tell the reader to read the file as plain text
       reader.readAsText(file);
     }
   };
@@ -69,8 +66,8 @@ export default function EmailPhisher ({setResult, setIsAnalyzing, isAnalyzing}) 
             type="file"
             ref={fileInputRef}
             onChange={handleFileChange}
-            style={{ display: 'none' }} // Hide it visually
-            accept=".txt" // Only allow .txt files to be selected
+            style={{ display: 'none' }}
+            accept=".txt"
           />
 
         </div>

@@ -5,7 +5,7 @@ export default function Reasons({reasons}) {
   if (reasons === null || reasons === undefined) return;
 
   return (
-    <div className="box flex flex-col gap-6">
+    <div className="box flex flex-col gap-6 min-h-[342px]">
       <h2 className="text-xl">Suspicious Indicators</h2>
       <div className="overflow-y-auto">
         <ul className="flex flex-col gap-4 items-center">

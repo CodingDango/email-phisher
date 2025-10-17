@@ -9,7 +9,7 @@ function App() {
   const [result, setResult] = useState(null);
 
   return (
-    <div className='min-h-screen flex justify-center px-4 py-8 bg-bg'>
+    <div className='min-h-screen flex justify-center px-4 py-12 bg-bg'>
       <div className='w-full max-w-4xl flex flex-col gap-16'>
         <header className=' flex flex-col items-center gap-4 '>
           <h1 className='text-3xl font-medium'>Email Phisher Analyzer</h1>
@@ -24,7 +24,7 @@ function App() {
         <main className='flex-1 flex flex-col gap-8'>
           <EmailPhisher {...{setIsAnalyzing, setResult, isAnalyzing}}/>
           
-          <div className="grid grid-cols-2 gap-8 grid-rows-[342px]">
+          <div className="grid md:grid-cols-2 gap-8 grid-rows-[342px]">
             {isAnalyzing 
               ? <div className="col-span-full grid place-items-center">
                   <MoonLoader color="#2b7fff"/>
