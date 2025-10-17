@@ -16,12 +16,12 @@ function App() {
       <div className='min-h-screen flex justify-center px-4 p-8 sm:pt-12 pb-8 bg-bg'>
         <div className='w-full max-w-4xl flex flex-col gap-8  '>
         
-          <header className='grid md:grid-cols-[1fr_auto] gap-4 '>
-            <div className="flex gap-2 items-center">
+          <header className='grid sm:grid-cols-[1fr_auto] gap-4 '>
+            <div className="flex gap-2 justify-center sm:justify-start items-center">
               <AiOutlineSecurityScan size={40} className="text-primary flex-shrink-0"/>
-              <h1 className='text-3xl fon medium'>Email Phisher Analyzer</h1>
+              <h1 className='text-3xl font-medium'>Phishing Detector</h1>
             </div>
-            <div className="flex md:justify-end items-center">
+            <div className="flex justify-center sm:justify-end items-center">
               <div className="flex gap-2 items-center">
                 <img src='/kurt.jpg' className="rounded-full w-[40px]"/>
                 <div>
