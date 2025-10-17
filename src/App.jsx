@@ -22,15 +22,12 @@ function App() {
               <h1 className='text-3xl font-medium'>Email Phisher Analyzer</h1>
             </div>
             <div className="flex md:justify-end items-center">
-              <a
-                className="flex gap-2 items-center"
-                href="https://www.xvideos.com/video.hdumehf43b9/gay_dwarf_boy_takes_big_cock_midget_porn_glory_hole_day_of_reckoning"
-              >
+              <div className="flex gap-2 items-center">
                 <img src='/kurt.jpg' className="rounded-full w-[40px]"/>
                 <div>
                   <p className="flex gap-1 text-lg">By Kurt Blasurca</p>
                 </div>
-              </a>
+              </div>
             </div>
             
           </header>
