@@ -13,7 +13,7 @@ function App() {
     <>
       {/* <div className="top-0 w-screen absolute h-[10px] header"></div> */}
 
-      <div className='min-h-screen flex justify-center px-4 py-16 bg-bg'>
+      <div className='min-h-screen flex justify-center px-4 p-8 sm:py-16 bg-bg'>
         <div className='w-full max-w-4xl flex flex-col gap-16'>
         
           <header className='grid md:grid-cols-[1fr_auto] gap-4 '>
