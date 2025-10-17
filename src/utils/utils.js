@@ -12,60 +12,92 @@ export function countWords(str) {
   return trimmedStr.split(/\s+/).length;
 }
 
-export function analyzeEmail(text) {
+export function getVerdictDetails(score) {
+  if (score === null || score === undefined) return null;
+
+  let verdictDetails;
+
+    if (score >= 10) {
+      verdictDetails = {
+        text: 'Critical Risk',
+        textColor: 'text-red-600',
+        bgColor: 'bg-red-600',
+        scoreText: '10+',
+        paragraph: 'This email exhibits multiple, severe signs of a malicious phishing attack. Do not click any links or download attachments.'
+      };
+    } else if (score >= 5) {
+      verdictDetails = {
+        text: 'High Risk',
+        textColor: 'text-red-500',
+        bgColor: 'bg-red-500',
+        scoreText: `${score}`, // Show the actual score
+        paragraph: 'This email shows strong indicators of a phishing attempt. Extreme caution is advised.'
+      };
+    } else if (score >= 1) { // Changed from >= 2 to catch any single issue
+      verdictDetails = {
+        text: 'Suspicious',
+        textColor: 'text-orange-400',
+        bgColor: 'bg-orange-400',
+        scoreText: `${score}`, // Show the actual score
+        paragraph: 'This email contains elements commonly found in phishing scams. Please verify the sender and links carefully.'
+      };
+    } else { // This will now only trigger for a score of 0
+      verdictDetails = {
+        text: 'Looks Safe',
+        textColor: 'text-green-500',
+        bgColor: 'bg-green-500',
+        scoreText: '0',
+        paragraph: 'Our analysis did not find any common phishing indicators. However, always remain cautious.'
+      };
+    }
+    return verdictDetails;
+}
+
+// replyTo can be null. analyzeSender handles this.
+export function analyzeEmail(fromHeader, replyTo, bodyText) {
   return new Promise((resolve) => {
     setTimeout(() => {
-      const textLower = text.toLowerCase();
+      const bodyTextLower = bodyText.toLowerCase();
 
-      const analysisResults = {
+      const results = {
         score: 0,
         reasons: []
       };
 
-      analyzeKeywords(textLower, analysisResults);
-      analyzeGenericGreetings(textLower, analysisResults);
-      analyzeLinks(text, analysisResults);
+      analyzeKeywords(bodyTextLower, results);
+      analyzeGenericGreetings(bodyTextLower, results);
+      analyzeLinks(bodyText, results);
+      analyzeSender(fromHeader, replyTo, results)
 
-      resolve(analysisResults);
+      resolve(results);
     }, 1000);
   })
 }
 
-export function getVerdictDetails(score) {
-  if (score === null || score === undefined) return null;
+function analyzeSender(fromHeader, replyToHeader, results) {
+  const fromRegex = /(.*?)<(.*)>/;
+  const match = fromHeader.match(fromRegex);
 
-  let verdictDetails = {};
+  if (match) {
+    const displayName = match[1].toLowerCase().trim();
+    const fromEmail = match[2].toLowerCase();
+    
+    const trustedNames = ["paypal", "microsoft", "google", "amazon", "apple"];
 
-  if (score >= 5) {
-    // High Risk State
-    verdictDetails = {
-      text: 'High Risk',
-      textColor: 'text-red-500',
-      bgColor: 'bg-red-500',
-      scoreText: '5+',
-      paragraph: 'This email shows multiple, strong indicators of a phishing attempt. Extreme caution is advised.'
-    };
-  } else if (score >= 2) {
-    // Suspicious State (Range 2-4)
-    verdictDetails = {
-      text: 'Suspicious',
-      textColor: 'text-orange-500',
-      bgColor: 'bg-orange-500',
-      scoreText: score,
-      paragraph: 'This email contains several elements commonly found in phishing scams. Please verify the sender and links carefully.'
-    };
-  } else {
-    // Looks Safe State (Range 0-1)
-    verdictDetails = {
-      text: 'Looks Safe',
-      textColor: 'text-green-400',
-      bgColor: 'bg-green-400',
-      scoreText: score,
-      paragraph: 'Our analysis did not find any common phishing indicators. However, always remain cautious.'
-    };
+    if (trustedNames.some(name => displayName.includes(name)) && 
+        !trustedNames.some(name => fromEmail.includes(name))) {
+      results.score += 5; // High score!
+      results.reasons.push(`Potential sender spoofing. Display name is '${displayName}' but email is from '${fromEmail}'.`);
+    }
   }
 
-  return verdictDetails;
+  if (replyToHeader) {
+    const fromAddress = match ? match[2] : fromHeader; 
+    if (replyToHeader && replyToHeader.toLowerCase() !== fromAddress.toLowerCase()) {
+      results.score += 3;
+      results.reasons.push(`'Reply-To' address ('${replyToHeader}') does not match 'From' address ('${fromAddress}').`);
+    }
+  }
 }
 
 function analyzeKeywords(textLower, results) {
@@ -75,23 +107,38 @@ function analyzeKeywords(textLower, results) {
     "invoice", "payment", "unauthorized", "suspicious"
   ];
 
+  let keywordScore = 0; 
+  let foundKeywords = [];
+
   keywords.forEach(keyword => {
     if (textLower.includes(keyword)) {
-      results.score += 1;
-      results.reasons.push(`Detected high-risk keyword: '${keyword}'`);
+      keywordScore += 1;
+      foundKeywords.push(keyword);
     }
   });
+
+  if (keywordScore > 0) {
+    results.score += 1; 
+    results.reasons.push(`Detected high-risk keywords: '${foundKeywords.join(', ')}'`);
+  }
 }
 
 function analyzeGenericGreetings(textLower, results) {
   const genericGreetings = ["dear customer", "dear user", "valued customer", "dear client"];
-    
+  let foundGreeting = false;
+  let foundText = "";
+
   genericGreetings.forEach(greeting => {
     if (textLower.includes(greeting)) {
-      results.score += 1;
-      results.reasons.push(`Detected a generic greeting: '${greeting}'`);
+      foundGreeting = true;
+      foundText = greeting; 
     }
   });
+
+  if (foundGreeting) {
+    results.score += 1;
+    results.reasons.push(`Detected a generic greeting: '${foundText}'`);
+  }
 }
 
 function analyzeLinks(text, results) {
@@ -108,17 +155,36 @@ function analyzeLinks(text, results) {
       
       if (visibleText.includes('.') && !visibleText.toLowerCase().includes(domain.replace('www.', ''))) {
         results.score += 3; 
-        results.reasons.push(`Found a misleading link. Text says '${visibleText}' but goes to '${domain}'.`);
+        results.reasons.push(`Misleading link. Text says '${visibleText}' but goes to '${domain}'.`);
       }
 
       const shorteners = ["bit.ly", "tinyurl.com", "t.co", "goo.gl"];
       if (shorteners.some(shortener => domain.includes(shortener))) {
         results.score += 2; 
-        results.reasons.push(`Found a link using a URL shortener: '${domain}'`);
+        results.reasons.push(`Link uses a URL shortener: '${domain}'`);
+      }
+      
+
+      const ipRegex = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
+      if (ipRegex.test(domain)) {
+        results.score += 3;
+        results.reasons.push(`Link points directly to an IP address: '${domain}'`);
+      }
+      
+      if (url.username || url.password) {
+        results.score += 5; // Very high risk!
+        results.reasons.push(`Link contains embedded username/password: '${url.href}'`);
+      }
+
+      const suspiciousExtensions = [".zip", ".exe", ".scr", ".js", ".vbs", ".rar"];
+      if (suspiciousExtensions.some(ext => url.pathname.toLowerCase().endsWith(ext))) {
+        results.score += 4;
+        results.reasons.push(`Link points to a suspicious file download: '${url.pathname}'`);
       }
 
     } catch (err) {
-      console.log(`Could not parse URL from href: ${href}`);
+      results.score += 1;
+      results.reasons.push(`Found a malformed or un-parsable link: '${href}'`);
     }
   }
 }

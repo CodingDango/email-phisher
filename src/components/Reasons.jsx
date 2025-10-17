@@ -17,15 +17,15 @@ export default function Reasons({reasons}) {
           {
             reasons.length === 0
             ? (
-              <li className="text-green-400 flex gap-2 items-center">
+              <li className="text-green-400 flex gap-2">
                 <span className="text-lg">No suspicious content found!</span>
                 <AiFillLike size={20} className="flex-shrink-0"/>
               </li>
             )
             : (
               reasons.map((reason, idx) => (
-                <li key={idx} className="text-red-400 flex gap-2 items-center">
-                  <MdErrorOutline size={20} className="flex-shrink-0"/>
+                <li key={idx} className="text-red-400 flex gap-2">
+                  <MdErrorOutline size={20} className="flex-shrink-0 mt-1"/>
                   <span>{reason}</span> 
                 </li>
               ))

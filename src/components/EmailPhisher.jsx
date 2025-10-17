@@ -1,27 +1,37 @@
 import { FiUpload } from "react-icons/fi";
 import { useState, useEffect, useRef } from "react";
 import { countWords, analyzeEmail } from "../utils/utils";
-import EmailTextArea from "./EmailTextArea";
+import EmailFields from "./EmailFields";
 import Button from "./Button";
 
-export default function   EmailPhisher ({setResult, setIsAnalyzing, isAnalyzing}) {
-  const [emailText, setEmailText] = useState('');
+const INITIAL_EMAIL_FIELDS = {
+  fromHeader: '',
+  replyTo: '',
+  bodyText: ''
+};
+
+export default function  EmailPhisher ({setResult, setIsAnalyzing, isAnalyzing}) {
+  const [emailFields, setEmailFields] = useState(INITIAL_EMAIL_FIELDS);
   const [totalChars, setTotalChars] = useState(0);
   const [totalWords, setTotalWords] = useState(0);
   const fileInputRef = useRef(null);
+
+  const {fromHeader, replyTo, bodyText} = emailFields;
   
   useEffect(() => {
-    setTotalChars(emailText.length);
-    setTotalWords(countWords(emailText)); 
-  }, [emailText]);
+    setTotalChars(bodyText.length);
+    setTotalWords(countWords(bodyText)); 
+  }, [bodyText]);
 
   const handleAnalysis = async () => {
-    if (emailText.trim().length === 0) return;
+    if (bodyText.trim().length === 0
+    || fromHeader.trim().length === 0
+    ) return;
 
     setIsAnalyzing(true);
     
     try {
-      const result = await analyzeEmail(emailText);
+      const result = await analyzeEmail(fromHeader, replyTo, bodyText);
       setResult(result);
       setIsAnalyzing(false);
     } catch(err) {
@@ -38,7 +48,7 @@ export default function   EmailPhisher ({setResult, setIsAnalyzing, isAnalyzing}
       
       reader.onload = (e) => {
         const text = e.target.result;
-        setEmailText(text); 
+        setEmailFields({...emailFields, bodyText: text});
       };
       
       reader.readAsText(file);
@@ -48,16 +58,23 @@ export default function   EmailPhisher ({setResult, setIsAnalyzing, isAnalyzing}
   const handleFileInputClick = () => fileInputRef.current.click();
 
   return (
-    <div className='box flex flex-col gap-6'>
-      <EmailTextArea {...{setEmailText, emailText}}/>
+    <form
+      onSubmit={(e) => {
+        e.preventDefault()
+        handleAnalysis();
+      }} 
+      className='box flex flex-col gap-8'>
+      <EmailFields {...{emailFields, setEmailFields}}/>
+      
       <div className='flex justify-between items-center'>
         <div className='flex flex-col sm:flex-row gap-4'>
           <Button
-            onClick={handleAnalysis} 
+            btnType="primary"
+            type="submit" 
             text={isAnalyzing ? 'Analyzing...' : 'Detect Phishing'}
           />
           <Button
-            type="ghost" 
+            btnType="ghost" 
             Icon={FiUpload}
             text={'Upload File'}
             onClick={handleFileInputClick}
@@ -76,6 +93,6 @@ export default function   EmailPhisher ({setResult, setIsAnalyzing, isAnalyzing}
           <div>{totalWords || 0} Words</div>
         </div>
       </div>
-    </div>
+    </form>
   );
 }

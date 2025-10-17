@@ -1,5 +1,5 @@
 export default function Button({
-  type = 'primary',
+  btnType = 'primary',
   Icon = undefined,
   iconSize = 16,
   text,
@@ -12,9 +12,9 @@ export default function Button({
 
   let additionalButtonClasses = null;
 
-  if (type === 'primary') {
+  if (btnType === 'primary') {
     additionalButtonClasses = 'bg-primary text-white';
-  } else if (type === 'ghost') {
+  } else if (btnType === 'ghost') {
     additionalButtonClasses = 'border border-primary text-primary';
   }
 

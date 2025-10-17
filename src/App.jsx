@@ -13,13 +13,13 @@ function App() {
     <>
       {/* <div className="top-0 w-screen absolute h-[10px] header"></div> */}
 
-      <div className='min-h-screen flex justify-center px-4 p-8 sm:py-16 bg-bg'>
-        <div className='w-full max-w-4xl flex flex-col gap-16'>
+      <div className='min-h-screen flex justify-center px-4 p-8 sm:pt-12 pb-8 bg-bg'>
+        <div className='w-full max-w-4xl flex flex-col gap-8  '>
         
           <header className='grid md:grid-cols-[1fr_auto] gap-4 '>
             <div className="flex gap-2 items-center">
               <AiOutlineSecurityScan size={40} className="text-primary flex-shrink-0"/>
-              <h1 className='text-3xl font-medium'>Email Phisher Analyzer</h1>
+              <h1 className='text-3xl fon medium'>Email Phisher Analyzer</h1>
             </div>
             <div className="flex md:justify-end items-center">
               <div className="flex gap-2 items-center">
@@ -29,8 +29,8 @@ function App() {
                 </div>
               </div>
             </div>
-            
           </header>
+
           <main className='flex-1 flex flex-col gap-8'>
             <EmailPhisher {...{setIsAnalyzing, setResult, isAnalyzing}}/>
             
