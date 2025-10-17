@@ -58,8 +58,8 @@ export function getVerdictDetails(score) {
     // Looks Safe State (Range 0-1)
     verdictDetails = {
       text: 'Looks Safe',
-      textColor: 'text-green-500',
-      bgColor: 'bg-green-500',
+      textColor: 'text-green-400',
+      bgColor: 'bg-green-400',
       scoreText: score,
       paragraph: 'Our analysis did not find any common phishing indicators. However, always remain cautious.'
     };

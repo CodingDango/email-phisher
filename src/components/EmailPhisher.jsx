@@ -4,7 +4,7 @@ import { countWords, analyzeEmail } from "../utils/utils";
 import EmailTextArea from "./EmailTextArea";
 import Button from "./Button";
 
-export default function EmailPhisher ({setResult, setIsAnalyzing, isAnalyzing}) {
+export default function   EmailPhisher ({setResult, setIsAnalyzing, isAnalyzing}) {
   const [emailText, setEmailText] = useState('');
   const [totalChars, setTotalChars] = useState(0);
   const [totalWords, setTotalWords] = useState(0);
@@ -51,7 +51,7 @@ export default function EmailPhisher ({setResult, setIsAnalyzing, isAnalyzing}) 
     <div className='box flex flex-col gap-6'>
       <EmailTextArea {...{setEmailText, emailText}}/>
       <div className='flex justify-between items-center'>
-        <div className='flex gap-4'>
+        <div className='flex flex-col sm:flex-row gap-4'>
           <Button
             onClick={handleAnalysis} 
             text={isAnalyzing ? 'Analyzing...' : 'Detect Phishing'}
