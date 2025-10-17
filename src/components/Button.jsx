@@ -7,7 +7,7 @@ export default function Button({
 }) {
   const baseButtonClasses = `
     px-4 py-2 rounded-md cursor-pointer hover:brightness-90 
-    flex gap-2 items-center
+    flex gap-2 items-center justify-center
   `;
 
   let additionalButtonClasses = null;

@@ -33,7 +33,7 @@ export function getVerdictDetails(score) {
         scoreText: `${score}`, // Show the actual score
         paragraph: 'This email shows strong indicators of a phishing attempt. Extreme caution is advised.'
       };
-    } else if (score >= 1) { // Changed from >= 2 to catch any single issue
+    } else if (score >= 2) { // Changed from >= 2 to catch any single issue
       verdictDetails = {
         text: 'Suspicious',
         textColor: 'text-orange-400',
@@ -46,7 +46,7 @@ export function getVerdictDetails(score) {
         text: 'Looks Safe',
         textColor: 'text-green-500',
         bgColor: 'bg-green-500',
-        scoreText: '0',
+        scoreText: score,
         paragraph: 'Our analysis did not find any common phishing indicators. However, always remain cautious.'
       };
     }
@@ -54,19 +54,19 @@ export function getVerdictDetails(score) {
 }
 
 // replyTo can be null. analyzeSender handles this.
-export function analyzeEmail(fromHeader, replyTo, bodyText) {
+export function analyzeEmail(fromHeader, replyTo, body) {
   return new Promise((resolve) => {
     setTimeout(() => {
-      const bodyTextLower = bodyText.toLowerCase();
+      const bodyLower = body.toLowerCase();
 
       const results = {
         score: 0,
         reasons: []
       };
 
-      analyzeKeywords(bodyTextLower, results);
-      analyzeGenericGreetings(bodyTextLower, results);
-      analyzeLinks(bodyText, results);
+      analyzeKeywords(bodyLower, results);
+      analyzeGenericGreetings(bodyLower, results);
+      analyzeLinks(bodyLower, results);
       analyzeSender(fromHeader, replyTo, results)
 
       resolve(results);
@@ -141,50 +141,87 @@ function analyzeGenericGreetings(textLower, results) {
   }
 }
 
-function analyzeLinks(text, results) {
-  const linkRegex = /<a\s+(?:[^>]*?\s+)?href="([^"]*)"[^>]*>(.*?)<\/a>/gi;
-  let match;
+function runCommonUrlChecks(url, results) {
+  const domain = url.hostname.replace('www.', '');
+
+  const shorteners = ["bit.ly", "tinyurl.com", "t.co", "goo.gl"];
+  if (shorteners.some(shortener => domain.includes(shortener))) {
+    results.score += 2; 
+    results.reasons.push(`Link uses a URL shortener: '${domain}'`);
+  }
+
+  const ipRegex = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
+  if (ipRegex.test(domain)) {
+    results.score += 3;
+    results.reasons.push(`Link points directly to an IP address: '${domain}'`);
+  }
   
-  while ((match = linkRegex.exec(text)) !== null) {
-    const href = match[1]; 
-    const visibleText = match[2].replace(/<[^>]*>/g, '').trim(); 
+  if (url.username || url.password) {
+    results.score += 5;
+    results.reasons.push(`Link contains embedded username/password.`);
+  }
+
+  const suspiciousExtensions = [".zip", ".exe", ".scr", ".js", ".vbs", ".rar"];
+  if (suspiciousExtensions.some(ext => url.pathname.toLowerCase().endsWith(ext))) {
+    results.score += 4;
+    results.reasons.push(`Link points to a suspicious file download: '${url.pathname}'`);
+  }
+}
+
+function analyzeLinks(text, results) {
+  const htmlLinkRegex = /<a\s+(?:[^>]*?\s+)?href="([^"]*)"[^>]*>(.*?)<\/a>/gi;
+  let htmlMatch;
+  let foundHtmlLinks = false;
+  
+  while ((htmlMatch = htmlLinkRegex.exec(text)) !== null) {
+    foundHtmlLinks = true;
+    const href = htmlMatch[1]; 
+    const visibleText = htmlMatch[2].replace(/<[^>]*>/g, '').trim(); 
 
     try {
       const url = new URL(href);
-      const domain = url.hostname; 
-      
-      if (visibleText.includes('.') && !visibleText.toLowerCase().includes(domain.replace('www.', ''))) {
-        results.score += 3; 
-        results.reasons.push(`Misleading link. Text says '${visibleText}' but goes to '${domain}'.`);
-      }
+      const linkDomain = url.hostname.replace('www.', '');
 
-      const shorteners = ["bit.ly", "tinyurl.com", "t.co", "goo.gl"];
-      if (shorteners.some(shortener => domain.includes(shortener))) {
-        results.score += 2; 
-        results.reasons.push(`Link uses a URL shortener: '${domain}'`);
-      }
+      // --- THE NEW, SMARTER MISLEADING LINK CHECK ---
+      // 1. Use a regex to find a domain-like pattern in the visible text.
+      const textDomainMatch = visibleText.toLowerCase().match(/([a-z0-9]+(?:-[a-z0-9]+)*\.)+[a-z]{2,}/);
       
-
-      const ipRegex = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
-      if (ipRegex.test(domain)) {
-        results.score += 3;
-        results.reasons.push(`Link points directly to an IP address: '${domain}'`);
+      if (textDomainMatch) {
+        const textDomain = textDomainMatch[0];
+        // 2. THE KEY: Check if the link's domain ENDS WITH the text's domain.
+        // This allows subdomains like "click.spotify.com" to match "spotify.com".
+        if (!linkDomain.endsWith(textDomain)) {
+          results.score += 3; 
+          results.reasons.push(`Misleading link. Text mentions '${textDomain}' but goes to '${linkDomain}'.`);
+        }
       }
       
-      if (url.username || url.password) {
-        results.score += 5; // Very high risk!
-        results.reasons.push(`Link contains embedded username/password: '${url.href}'`);
-      }
-
-      const suspiciousExtensions = [".zip", ".exe", ".scr", ".js", ".vbs", ".rar"];
-      if (suspiciousExtensions.some(ext => url.pathname.toLowerCase().endsWith(ext))) {
-        results.score += 4;
-        results.reasons.push(`Link points to a suspicious file download: '${url.pathname}'`);
-      }
+      // 3. Run all the other standard checks on the URL.
+      runCommonUrlChecks(url, results);
 
     } catch (err) {
       results.score += 1;
-      results.reasons.push(`Found a malformed or un-parsable link: '${href}'`);
+      results.reasons.push(`Found a malformed or un-parsable link tag: '${href}'`);
+    }
+  }
+
+  // --- STRATEGY 2: The Plain Text Fallback ---
+  // If no <a> tags were found, scan for raw URLs instead.
+  if (!foundHtmlLinks) {
+    const plainTextLinkRegex = /(https?:\/\/[^\s"'<>]+)/gi;
+    let plainMatch;
+
+    while ((plainMatch = plainTextLinkRegex.exec(text)) !== null) {
+      const href = plainMatch[0];
+
+      try {
+        const url = new URL(href);
+        // We can't check for misleading text, but we can run all our other checks!
+        runCommonUrlChecks(url, results);
+      } catch (err) {
+        // This is less severe for plain text, so no score increase.
+        console.warn(`Could not parse plain text URL: ${href}`);
+      }
     }
   }
 }

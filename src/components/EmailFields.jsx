@@ -1,21 +1,19 @@
 export default function EmailFields({emailFields, setEmailFields}) {
   const handleInputChange = (e) => {
-    // e.target.name will be "fromHeader", "replyTo", or "body"
-    // e.target.value will be the text the user typed
     const { name, value } = e.target;
     
     setEmailFields(prevFields => ({
       ...prevFields,
-      [name]: value // [name] is a "computed property name" - very powerful!
+      [name]: value 
     }));
   };
-
 
   return (
     <div className="grid sm:grid-cols-2 gap-4">
       <div className="flex gap-2 flex-col">
-        <label for='email-header' className="text-neutral-400">From Header</label>
+        <label htmlFor='email-header' className="text-neutral-400">From Header</label>
         <input
+          value={emailFields.fromHeader}
           required 
           id="email-header" 
           name="fromHeader"
@@ -26,10 +24,11 @@ export default function EmailFields({emailFields, setEmailFields}) {
       </div>
       <div className="flex gap-2 flex-col">
         <label 
-          for='email-reply-to' 
+          htmlFor='email-reply-to' 
           className="text-neutral-400"
         >Reply-To Header (Optional)</label>
-        <input 
+        <input
+          value={emailFields.replyTo} 
           id="email-reply-to"
           name="replyTo" 
           className="bg-neutral-950 rounded-lg px-4 py-2 input-outline" 
@@ -40,13 +39,13 @@ export default function EmailFields({emailFields, setEmailFields}) {
 
       <div className="col-span-full flex gap-2 flex-col">
         <label 
-          for='email-body'
+          htmlFor='email-body'
           className="text-neutral-400"
-        >Body Text:</label>
+        >Body HTML:</label>
         <textarea
           required 
           id="email-body"
-          name="bodyText"
+          name="body"
           value={emailFields.body}
           onChange={handleInputChange} 
           placeholder="Enter the email body here..."
